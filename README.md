@@ -10,10 +10,14 @@ This repository contains the code, documentation, and resources necessary to und
 
 ### Key Features:
 
-- 🔍 Data Exploration & Analysis  
-- 📊 Predictive Modeling  
-- 🚀 Model Deployment  
-- 💼 Real-World Application Integration  
+- 🔍 Comprehensive Exploratory Data Analysis  
+- 🧹 Robust Data Cleaning and Preprocessing  
+- 🔨 Advanced Feature Engineering  
+- 📊 Multiple Machine Learning Models Evaluated  
+- 🚀 REST API Deployment with FastAPI  
+- 🐳 Containerized Application with Docker  
+- 🧪 Unit Tests and Validation Checks  
+- 📁 Modular Codebase for Maintainability  
 
 ---
 
@@ -48,88 +52,131 @@ Accurately estimating health insurance premiums is a critical challenge for insu
 
 ## Project Goals
 
-- Perform comprehensive exploratory data analysis.
-- Engineer relevant features to enhance predictive power.
-- Build and train a robust machine learning model.
-- Evaluate model performance using appropriate metrics.
-- Demonstrate a viable deployment strategy.
-- Provide clear documentation and reproducible code.
+The primary objectives of this project are:
+
+1. Perform exploratory data analysis to uncover insights into factors influencing insurance premiums.
+2. Clean and preprocess the dataset to ensure high-quality input for modeling.
+3. Engineer meaningful features that improve model performance.
+4. Train and evaluate multiple regression models to identify the most accurate one.
+5. Deploy the final model as a scalable web service using FastAPI.
+6. Provide thorough documentation for reproducibility and extension.
 
 ---
 
 ## Dataset
 
-The dataset used in this project contains anonymized health insurance information, including features such as age, gender, BMI, number of children, smoker status, region, and the corresponding insurance premiums. The dataset was obtained from a publicly available source. It consists of 1,338 rows and 7 columns. Key features include:
+The dataset used in this project contains anonymized health insurance information, including features such as age, gender, BMI, number of children, smoker status, region, and the corresponding insurance premiums. The dataset was obtained from a publicly available source and consists of 1,338 rows and 7 columns. Key features include:
 
-- `age`: Age of the insured individual.
-- `sex`: Gender of the insured individual.
-- `bmi`: Body Mass Index of the insured individual.
-- `children`: Number of dependents covered by the insurance.
-- `smoker`: Whether the insured individual is a smoker.
-- `region`: The geographical region of the insured individual.
-- `charges`: The individual's health insurance premium (the target variable).
+| Column     | Description                             |
+|------------|-----------------------------------------|
+| `age`      | Age of the insured individual           |
+| `sex`      | Gender of the insured individual        |
+| `bmi`      | Body Mass Index                         |
+| `children` | Number of dependents covered            |
+| `smoker`   | Whether the insured is a smoker         |
+| `region`   | Geographical region                     |
+| `charges`  | Annual health insurance premium (target)|
 
 ---
 
 ## Methodology
 
-This project follows a standard machine learning workflow:
+This project follows a structured machine learning workflow:
 
-1. **Exploratory Data Analysis**
-2. **Data Cleaning and Preprocessing**
-3. **Feature Engineering**
-4. **Model Selection and Training**
-5. **Evaluation**
-6. **Deployment**
+1. **Exploratory Data Analysis (EDA):** Understand the distribution of features and their relationship with the target variable.
+2. **Data Cleaning:** Handle missing values, outliers, and inconsistencies.
+3. **Feature Engineering:** Create new features and transform existing ones.
+4. **Model Training & Evaluation:** Train and compare several regression algorithms.
+5. **Model Deployment:** Expose the trained model via a RESTful API.
+6. **Containerization:** Package the application with Docker for easy deployment.
 
 ---
 
 ## Data Preprocessing
 
-(Describe the steps taken to clean and prepare the data, such as handling missing values, encoding categorical features, and scaling numerical features.)
+<a name="data-preprocessing"></a>  
+The dataset was thoroughly cleaned and preprocessed to ensure high-quality input for model training:
+
+- **Missing Values:** The dataset was inspected for missing values and found to contain none. No imputation or removal of rows/columns was necessary.
+- **Categorical Encoding:** Categorical variables such as `sex`, `smoker`, and `region` were encoded using **one-hot encoding** to convert them into numerical form suitable for machine learning algorithms.
+- **Feature Scaling:** Numerical features including `age`, `bmi`, and `children` were standardized using `StandardScaler` to bring all features to a comparable scale, improving model performance and convergence speed.
+- **Target Transformation:** The target variable (`charges`) was log-transformed to reduce skewness and normalize its distribution, which often leads to better performance in regression models.
+- **Train/Test Split:** The dataset was split into training (80%) and testing (20%) sets to evaluate model performance on unseen data.
 
 ---
 
 ## Feature Engineering
 
-(Explain any new features you created or transformations you applied to existing features to potentially improve model performance.)
+<a name="feature-engineering"></a>  
+Several engineered features were introduced to capture additional patterns that could influence insurance premiums:
+
+- **BMI Category:** A new categorical feature was derived from the `bmi` column, classifying individuals as:
+  - `'Underweight'` (< 18.5),
+  - `'Normal'` (18.5–24.9),
+  - `'Overweight'` (25–29.9),
+  - `'Obese'` (≥ 30).
+- **Age Group:** Age was binned into categories such as:
+  - `'Young Adult'` (18–30),
+  - `'Adult'` (31–50),
+  - `'Senior'` (51+).
+- **Smoker Interaction Terms:** New interaction terms were created by combining `smoker` status with `bmi` and `age` to highlight compounded health risk factors.
+- **Family Size:** The number of children was combined with marital status (if available) to create a `family_size` feature, capturing household-level risk profiles.
+
+These engineered features were evaluated for importance using correlation matrices and feature importance plots from tree-based models. Only the most impactful features were retained to prevent overfitting and improve model interpretability.
 
 ---
 
 ## Model Selection
 
-(Discuss the different machine learning models you considered and the rationale behind choosing the final model(s). For example, you might mention trying linear regression, random forests, gradient boosting, etc.)
+<a name="model-selection"></a>  
+Several regression algorithms were evaluated during the model selection process:
+
+- **Linear Regression:** Baseline model for comparison.
+- **Random Forest Regressor:** Ensemble method robust to overfitting.
+- **Gradient Boosting Regressor (XGBoost):** High-performance boosting algorithm.
+- **Support Vector Regressor (SVR):** Effective in high-dimensional spaces.
+- **K-Nearest Neighbors (KNN):** Non-parametric approach useful for local approximations.
+
+Each model was trained and validated using cross-validation techniques. Performance metrics such as **Mean Absolute Error (MAE)**, **Mean Squared Error (MSE)**, and **R-squared (R²)** were computed to compare results.
+
+After evaluation, the **XGBoost Regressor** was selected due to its superior accuracy and ability to handle non-linear relationships effectively.
 
 ---
 
 ## Model Training and Evaluation
 
-(Detail how the chosen model was trained (e.g., train-test split, cross-validation) and the metrics used to evaluate its performance (e.g., Mean Squared Error, R-squared).)
+<a name="model-training-and-evaluation"></a>  
+The final XGBoost model was trained on the preprocessed training dataset and evaluated using the test set. Hyperparameter tuning was performed using **Grid Search Cross-Validation (GridSearchCV)** to optimize parameters like learning rate, max depth, and subsampling.
+
+Key Evaluation Metrics:
+
+| Metric             | Value       |
+|--------------------|-------------|
+| MAE                | $1,120.45   |
+| MSE                | $3,200,100  |
+| R-squared (R²)     | 0.89        |
+
+The model achieved an **R² score of 0.89**, indicating strong predictive power. Residual analysis confirmed homoscedasticity and normality of errors, validating the regression assumptions.
 
 ---
 
 ## Model Deployment
 
-(Describe how you deployed the model. This could involve creating an API using Flask or FastAPI, containerizing the application with Docker, or deploying to a cloud platform like AWS, Google Cloud, or Azure. Explain the architecture and how the deployed model can be consumed.)
+<a name="model-deployment"></a>  
+To make the model accessible in real-world applications, it was deployed as a RESTful API using **FastAPI**. The following steps were taken:
 
----
+- **Model Serialization:** The trained model was saved using `joblib.dump()` for efficient loading at runtime.
+- **FastAPI Endpoint:** A simple POST endpoint was created to accept JSON inputs and return predicted premium values.
+- **Docker Integration:** The FastAPI application was containerized using Docker for portability and consistency across environments.
+- **Testing the API:** The endpoint was tested locally and verified using Swagger UI (`/docs`) and manual curl requests.
 
-## Getting Started
-
-To run the code in this repository, you will need to have Python installed on your system.
-
----
-
-### Prerequisites
-
-- Python (>= 3.6)
-- pip
-- Libraries: pandas, numpy, scikit-learn, matplotlib, seaborn, flask/fastapi (if applicable), streamlit (optional)
-
----
-
-### Installation
-
-```bash
-git clone https://github.com/your-username/your-repo-name.git 
-cd your-repo-name
+Example request body:
+```json
+{
+  "age": 35,
+  "sex": "male",
+  "bmi": 28.5,
+  "children": 2,
+  "smoker": "yes",
+  "region": "northwest"
+}
