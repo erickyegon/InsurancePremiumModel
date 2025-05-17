@@ -926,6 +926,8 @@ pytest --cov=src
 ```
 
 ### 📊 Demo Credentials
+For Streamlit access to the page
+- **URL**: https://yegoninsurancepremiummodel.streamlit.app/
 
 For quick access to the demo:
 - **URL**: https://insurance-premium-demo.azurewebsites.net
