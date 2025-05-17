@@ -1,20 +1,26 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.express as px
+"""
+Insurance Premium Prediction Streamlit Application
+
+This module implements a Streamlit web application for predicting insurance premiums
+based on customer attributes. It includes features for premium calculation, model
+monitoring, drift detection, and model retraining.
+"""
+
+# Standard library imports
 import os
 import sys
 import time
 import logging
 import uuid
-import yaml
-import json
-import base64
-from io import BytesIO
-from PIL import Image
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, Any, List, Tuple, Optional, Union
+
+# Third-party imports
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+from scipy import stats
+from scipy.spatial import distance
 
 # Function to create sample visualizations for the instructions tab
 
@@ -195,33 +201,79 @@ def load_prediction_pipeline():
         return FallbackPredictionPipeline()
 
 
-@st.cache_data(show_spinner="Loading schema configuration...")
+@st.cache_resource(show_spinner="Loading schema configuration...")
 def load_schema():
+    """Load schema configuration from YAML file or return a default schema."""
     try:
+        # Try to load schema from file
         schema_data = read_yaml("schema.yaml")
         if not schema_data:
             raise ValueError("Schema is empty or invalid")
-        return schema_data
+
+        # Convert dictionary to object with attributes for compatibility
+        schema_obj = type('obj', (object,), {})
+        columns_obj = type('cols', (object,), {})
+        setattr(schema_obj, 'columns', columns_obj)
+
+        # Create column objects with constraints and categories
+        for col_name, col_data in schema_data.get('columns', {}).items():
+            col_obj = type(col_name.lower(), (object,), {})
+
+            # Add constraints if they exist
+            if 'constraints' in col_data:
+                setattr(col_obj, 'constraints', type(
+                    'constraints', (object,), col_data['constraints']))
+
+            # Add categories if they exist
+            if 'categories' in col_data:
+                setattr(col_obj, 'categories', col_data['categories'])
+
+            # Add the column to columns object
+            setattr(columns_obj, col_name, col_obj)
+
+        return schema_obj
     except Exception as e:
         logger.error(f"Error loading schema: {e}")
         st.error(f"Error loading schema configuration: {e}")
+
         # Return a minimal fallback schema with default values
-        return type('obj', (object,), {
-            'columns': type('cols', (object,), {
-                'Age': type('age', (object,), {'constraints': {'min': 18, 'max': 100}}),
-                'Gender': type('gender', (object,), {'categories': ['Male', 'Female', 'Other']}),
-                'BMI_Category': type('bmi', (object,), {'categories': ['Underweight', 'Normal', 'Overweight', 'Obese']}),
-                'Number_Of_Dependants': type('deps', (object,), {'constraints': {'min': 0, 'max': 10}}),
-                'Smoking_Status': type('smoking', (object,), {'categories': ['Non-smoker', 'Smoker']}),
-                'Region': type('region', (object,), {'categories': ['northeast', 'northwest', 'southeast', 'southwest']}),
-                'Marital_status': type('marital', (object,), {'categories': ['Single', 'Married', 'Divorced', 'Widowed']}),
-                'Employment_Status': type('employment', (object,), {'categories': ['Employed', 'Self-employed', 'Unemployed', 'Retired']}),
-                'Income_Level': type('income', (object,), {'categories': ['Low', 'Medium', 'High']}),
-                'Income_Lakhs': type('income_lakhs', (object,), {'constraints': {'min': 1.0, 'max': 100.0}}),
-                'Medical_History': type('medical', (object,), {'categories': ['None', 'Minor', 'Major']}),
-                'Insurance_Plan': type('plan', (object,), {'categories': ['Basic', 'Standard', 'Premium', 'Ultimate']})
-            })
-        })
+        schema_obj = type('obj', (object,), {})
+        columns_obj = type('cols', (object,), {})
+        setattr(schema_obj, 'columns', columns_obj)
+
+        # Define default columns
+        default_columns = {
+            'Age': {'constraints': {'min': 18, 'max': 100}},
+            'Gender': {'categories': ['Male', 'Female', 'Other']},
+            'BMI_Category': {'categories': ['Underweight', 'Normal', 'Overweight', 'Obese']},
+            'Number_Of_Dependants': {'constraints': {'min': 0, 'max': 10}},
+            'Smoking_Status': {'categories': ['Non-Smoker', 'Smoker']},
+            'Region': {'categories': ['northeast', 'northwest', 'southeast', 'southwest']},
+            'Marital_status': {'categories': ['Single', 'Married', 'Divorced', 'Widowed']},
+            'Employment_Status': {'categories': ['Employed', 'Self-employed', 'Unemployed', 'Retired']},
+            'Income_Level': {'categories': ['Low', 'Medium', 'High']},
+            'Income_Lakhs': {'constraints': {'min': 1.0, 'max': 100.0}},
+            'Medical_History': {'categories': ['None', 'Minor', 'Major']},
+            'Insurance_Plan': {'categories': ['Basic', 'Standard', 'Premium', 'Ultimate']}
+        }
+
+        # Create column objects
+        for col_name, col_data in default_columns.items():
+            col_obj = type(col_name.lower(), (object,), {})
+
+            # Add constraints if they exist
+            if 'constraints' in col_data:
+                setattr(col_obj, 'constraints', type(
+                    'constraints', (object,), col_data['constraints']))
+
+            # Add categories if they exist
+            if 'categories' in col_data:
+                setattr(col_obj, 'categories', col_data['categories'])
+
+            # Add the column to columns object
+            setattr(columns_obj, col_name, col_obj)
+
+        return schema_obj
 
 
 # Initialize session state if not already initialized
@@ -240,6 +292,42 @@ try:
 except Exception as e:
     logger.error(f"Critical error during initialization: {e}")
     st.error(f"Critical error during app initialization: {e}")
+    # Create a fallback schema to avoid NameError
+    schema = type('obj', (object,), {})
+    columns_obj = type('cols', (object,), {})
+    setattr(schema, 'columns', columns_obj)
+
+    # Define default columns
+    default_columns = {
+        'Age': {'constraints': {'min': 18, 'max': 100}},
+        'Gender': {'categories': ['Male', 'Female', 'Other']},
+        'BMI_Category': {'categories': ['Underweight', 'Normal', 'Overweight', 'Obese']},
+        'Number_Of_Dependants': {'constraints': {'min': 0, 'max': 10}},
+        'Smoking_Status': {'categories': ['Non-Smoker', 'Smoker']},
+        'Region': {'categories': ['northeast', 'northwest', 'southeast', 'southwest']},
+        'Marital_status': {'categories': ['Single', 'Married', 'Divorced', 'Widowed']},
+        'Employment_Status': {'categories': ['Employed', 'Self-employed', 'Unemployed', 'Retired']},
+        'Income_Level': {'categories': ['Low', 'Medium', 'High']},
+        'Income_Lakhs': {'constraints': {'min': 1.0, 'max': 100.0}},
+        'Medical_History': {'categories': ['None', 'Minor', 'Major']},
+        'Insurance_Plan': {'categories': ['Basic', 'Standard', 'Premium', 'Ultimate']}
+    }
+
+    # Create column objects
+    for col_name, col_data in default_columns.items():
+        col_obj = type(col_name.lower(), (object,), {})
+
+        # Add constraints if they exist
+        if 'constraints' in col_data:
+            setattr(col_obj, 'constraints', type(
+                'constraints', (object,), col_data['constraints']))
+
+        # Add categories if they exist
+        if 'categories' in col_data:
+            setattr(col_obj, 'categories', col_data['categories'])
+
+        # Add the column to columns object
+        setattr(columns_obj, col_name, col_obj)
 
 
 # Custom CSS with Tailwind CDN for modern, responsive styling
@@ -540,7 +628,7 @@ def render_sidebar_inputs():
             if key.endswith("_input"):
                 del st.session_state[key]
         st.session_state.notification = "All fields have been reset to default values."
-        st.experimental_rerun()
+        st.rerun()
 
     # Add comparison mode toggle
     st.sidebar.markdown("---")
@@ -641,9 +729,8 @@ def render_main_content(inputs):
                             st.session_state.prediction_history = []
 
                         # Save prediction with timestamp and inputs
-                        import datetime
                         st.session_state.prediction_history.append({
-                            'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             'premium': st.session_state.last_prediction,
                             'inputs': inputs.copy()  # Save a copy of the inputs
                         })
@@ -799,7 +886,7 @@ def render_main_content(inputs):
                                 if key != 'comparison':  # Skip comparison data
                                     st.session_state[f"{key}_input"] = value
                             st.session_state.notification = "Previous inputs loaded successfully."
-                            st.experimental_rerun()
+                            st.rerun()
 
     with col2:
         st.markdown(
@@ -1030,6 +1117,7 @@ def trigger_model_retraining(data_source_type="default", file_path=None, uploade
         data_url: URL to the data file (if data_source_type is 'url')
         validate_data: Whether to validate the data before retraining
     """
+    # Note: validate_data parameter is used in the UI but not in the simulation
     # Display appropriate message based on data source
     data_source_info = ""
     if data_source_type == "uploaded_file" and uploaded_file is not None:
@@ -1609,7 +1697,6 @@ def render_model_monitoring():
                 st.plotly_chart(fig_age_current, use_container_width=True)
 
                 # Calculate KS statistic
-                from scipy import stats
                 ks_stat, p_value = stats.ks_2samp(age_train, age_current)
                 drift_detected = p_value < 0.05
 
@@ -1633,7 +1720,6 @@ def render_model_monitoring():
                 st.plotly_chart(fig_bmi_current, use_container_width=True)
 
                 # Calculate chi-square statistic
-                from scipy import stats
                 train_counts = bmi_train['BMI_Category'].value_counts(
                 ).sort_index()
                 current_counts = bmi_current['BMI_Category'].value_counts(
@@ -1660,7 +1746,6 @@ def render_model_monitoring():
                 st.plotly_chart(fig_smoking_current, use_container_width=True)
 
                 # Calculate chi-square statistic
-                from scipy import stats
                 train_counts = smoking_train['Smoking_Status'].value_counts(
                 ).sort_index()
                 current_counts = smoking_current['Smoking_Status'].value_counts(
@@ -1682,7 +1767,6 @@ def render_model_monitoring():
                 st.plotly_chart(fig_income_current, use_container_width=True)
 
                 # Calculate KS statistic
-                from scipy import stats
                 ks_stat, p_value = stats.ks_2samp(income_train, income_current)
                 drift_detected = p_value < 0.05
 
@@ -1706,7 +1790,6 @@ def render_model_monitoring():
                 st.plotly_chart(fig_medical_current, use_container_width=True)
 
                 # Calculate chi-square statistic
-                from scipy import stats
                 train_counts = medical_train['Medical_History'].value_counts(
                 ).sort_index()
                 current_counts = medical_current['Medical_History'].value_counts(
@@ -1718,13 +1801,25 @@ def render_model_monitoring():
         # Display drift statistics
         st.markdown("### Drift Detection Statistics")
 
+        # Initialize variables to avoid "used before assignment" errors
+        ks_stat = 0.0
+        chi2_stat = 0.0
+        p_value = 0.0
+        drift_detected = False
+
+        # Set appropriate values based on the feature type
+        if drift_feature in ['Age', 'Income_Lakhs']:
+            test_name = 'Kolmogorov-Smirnov'
+            test_stat = f"{ks_stat:.4f}"
+        else:
+            test_name = 'Chi-Square'
+            test_stat = f"{chi2_stat:.4f}"
+
         drift_metrics = pd.DataFrame({
             'Metric': ['Statistical Test', 'Test Statistic', 'p-value', 'Drift Detected'],
             'Value': [
-                'Kolmogorov-Smirnov' if drift_feature in [
-                    'Age', 'Income_Lakhs'] else 'Chi-Square',
-                f"{ks_stat:.4f}" if drift_feature in [
-                    'Age', 'Income_Lakhs'] else f"{chi2_stat:.4f}",
+                test_name,
+                test_stat,
                 f"{p_value:.4f}",
                 "Yes" if drift_detected else "No"
             ]
@@ -1828,11 +1923,9 @@ def render_model_monitoring():
             st.markdown("#### Distribution Shift Analysis")
 
             # Calculate KS statistic for prediction distributions
-            from scipy import stats
             ks_stat, p_value = stats.ks_2samp(initial_preds, current_preds)
 
             # Calculate Jensen-Shannon divergence
-            from scipy.spatial import distance
             initial_hist, bin_edges = np.histogram(
                 initial_preds, bins=50, density=True)
             current_hist, _ = np.histogram(
