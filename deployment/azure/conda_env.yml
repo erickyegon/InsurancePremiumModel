@@ -1,0 +1,32 @@
+name: insurance_premium_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - pip=21.3.1
+  - numpy=1.22.3
+  - pandas=1.4.2
+  - scikit-learn=1.0.2
+  - matplotlib=3.5.1
+  - seaborn=0.11.2
+  - joblib=1.1.0
+  - pip:
+    - fastapi==0.78.0
+    - uvicorn==0.17.6
+    - streamlit==1.10.0
+    - pydantic==1.9.1
+    - python-multipart==0.0.5
+    - xgboost==1.6.1
+    - azureml-core==1.42.0
+    - azureml-defaults==1.42.0
+    - azureml-mlflow==1.42.0
+    - azureml-telemetry==1.42.0
+    - azure-storage-blob==12.13.0
+    - applicationinsights==0.11.10
+    - opencensus-ext-azure==1.1.7
+    - opencensus-ext-logging==0.1.0
+    - box==0.0.6
+    - PyYAML==6.0
+    - evidently==0.1.58.dev0
+    - mlflow==1.26.1

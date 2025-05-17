@@ -1,0 +1,102 @@
+# Model Monitoring Configuration
+
+# Data Drift Detection
+data_drift:
+  # Reference dataset path (baseline for comparison)
+  reference_dataset: "data/reference_data.csv"
+  
+  # Monitoring frequency in hours
+  monitoring_frequency: 24
+  
+  # Statistical tests for drift detection
+  statistical_tests:
+    - kolmogorov_smirnov
+    - chi_squared
+  
+  # Drift thresholds for each feature
+  drift_thresholds:
+    numerical_features:
+      Age: 0.1
+      Number_Of_Dependants: 0.15
+      Income_Lakhs: 0.12
+    categorical_features:
+      Gender: 0.08
+      BMI_Category: 0.1
+      Smoking_Status: 0.05
+      Region: 0.1
+      Marital_status: 0.1
+      Employment_Status: 0.1
+      Income_Level: 0.1
+      Medical_History: 0.08
+      Insurance_Plan: 0.1
+  
+  # Overall drift threshold (percentage of features that can drift before alerting)
+  overall_drift_threshold: 0.3
+
+# Model Performance Monitoring
+performance_monitoring:
+  # Metrics to track
+  metrics:
+    - name: rmse
+      threshold: 1200  # Maximum acceptable RMSE
+    - name: mae
+      threshold: 900   # Maximum acceptable MAE
+    - name: r2
+      threshold: 0.85  # Minimum acceptable R²
+      comparison: "less_than"  # Alert if below this threshold
+  
+  # Monitoring frequency in hours
+  monitoring_frequency: 24
+  
+  # Minimum number of samples required for evaluation
+  min_samples: 100
+
+# Retraining Triggers
+retraining_triggers:
+  # Trigger retraining if data drift exceeds this threshold
+  data_drift_threshold: 0.4
+  
+  # Trigger retraining if performance drops below these thresholds
+  performance_thresholds:
+    rmse_increase: 15  # Percentage increase in RMSE
+    mae_increase: 15   # Percentage increase in MAE
+    r2_decrease: 10    # Percentage decrease in R²
+  
+  # Trigger retraining after this many days regardless of other factors
+  time_based_trigger: 90  # Days
+  
+  # Minimum number of new samples required before considering retraining
+  min_new_samples: 1000
+
+# Alerting Configuration
+alerting:
+  # Email notifications
+  email:
+    enabled: true
+    recipients:
+      - keyegon@gmail.com
+    severity_levels:
+      - warning
+      - critical
+  
+  # Slack notifications
+  slack:
+    enabled: false
+    webhook_url: ""
+    channel: "#model-monitoring"
+    severity_levels:
+      - critical
+  
+  # Azure Application Insights
+  azure_app_insights:
+    enabled: true
+    instrumentation_key: "${AZURE_APP_INSIGHTS_KEY}"
+    severity_levels:
+      - warning
+      - critical
+
+# Logging Configuration
+logging:
+  level: INFO
+  retention_days: 30
+  log_path: "logs/model_monitoring/"
