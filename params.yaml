@@ -1,0 +1,41 @@
+# XGBoost model parameters
+xgboost:
+  learning_rate: 0.1
+  max_depth: 5
+  n_estimators: 100
+  subsample: 0.8
+  colsample_bytree: 0.8
+  objective: 'reg:squarederror'
+  random_state: 42
+  # Add tree_method parameter to avoid GPU-related errors
+  tree_method: 'hist'
+  # Disable GPU acceleration if causing issues
+  gpu_id: -1
+
+# Random Forest model parameters
+random_forest:
+  n_estimators: 100
+  max_depth: 10
+  min_samples_split: 2
+  min_samples_leaf: 1
+  random_state: 42
+
+# Linear Regression model parameters
+linear_regression:
+  fit_intercept: true
+  # normalize parameter is deprecated in newer scikit-learn versions
+  # normalize: false
+
+# SVR model parameters
+svr:
+  kernel: 'rbf'
+  C: 1.0
+  epsilon: 0.1
+  gamma: 'scale'
+
+# KNN model parameters
+knn:
+  n_neighbors: 5
+  weights: 'uniform'
+  algorithm: 'auto'
+  p: 2

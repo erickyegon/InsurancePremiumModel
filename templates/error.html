@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - Insurance Premium Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header class="text-center my-4">
+            <h1>Insurance Premium Prediction</h1>
+            <p class="lead">An error occurred</p>
+        </header>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">Error</h2>
+
+                        <div class="alert alert-danger">
+                            <h4 class="alert-heading">Something went wrong!</h4>
+                            <p>{{ error }}</p>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <a href="/" class="btn btn-primary">Go Back</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center mt-4">
+            <div class="mb-2">
+                <strong>Developed by:</strong> Erick K. Yegon, PhD | <a
+                    href="mailto:keyegon@gmail.com">keyegon@gmail.com</a>
+            </div>
+            <p>© 2025 Insurance Premium Prediction Model</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

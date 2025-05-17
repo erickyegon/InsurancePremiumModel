@@ -10,14 +10,14 @@ This repository contains the code, documentation, and resources necessary to und
 
 ### Key Features:
 
-- 🔍 Comprehensive Exploratory Data Analysis  
-- 🧹 Robust Data Cleaning and Preprocessing  
-- 🔨 Advanced Feature Engineering  
-- 📊 Multiple Machine Learning Models Evaluated  
-- 🚀 REST API Deployment with FastAPI  
-- 🐳 Containerized Application with Docker  
-- 🧪 Unit Tests and Validation Checks  
-- 📁 Modular Codebase for Maintainability  
+- 🔍 Comprehensive Exploratory Data Analysis
+- 🧹 Robust Data Cleaning and Preprocessing
+- 🔨 Advanced Feature Engineering
+- 📊 Multiple Machine Learning Models Evaluated
+- 🚀 REST API Deployment with FastAPI
+- 🐳 Containerized Application with Docker
+- 🧪 Unit Tests and Validation Checks
+- 📁 Modular Codebase for Maintainability
 
 ---
 
@@ -65,17 +65,25 @@ The primary objectives of this project are:
 
 ## Dataset
 
-The dataset used in this project contains anonymized health insurance information, including features such as age, gender, BMI, number of children, smoker status, region, and the corresponding insurance premiums. The dataset was obtained from a publicly available source and consists of 1,338 rows and 7 columns. Key features include:
+The dataset used in this project contains anonymized health insurance information from a premiums.xlsx file. It consists of 50,000 records with 13 features including demographic, lifestyle, and insurance details. Key features include:
 
-| Column     | Description                             |
-|------------|-----------------------------------------|
-| `age`      | Age of the insured individual           |
-| `sex`      | Gender of the insured individual        |
-| `bmi`      | Body Mass Index                         |
-| `children` | Number of dependents covered            |
-| `smoker`   | Whether the insured is a smoker         |
-| `region`   | Geographical region                     |
-| `charges`  | Annual health insurance premium (target)|
+| Column                  | Description                                |
+|-------------------------|--------------------------------------------|
+| `Age`                   | Age of the insured individual              |
+| `Gender`                | Gender of the insured individual           |
+| `BMI_Category`          | Body Mass Index category                   |
+| `Number Of Dependants`  | Number of dependents covered               |
+| `Smoking_Status`        | Smoking status of the insured              |
+| `Region`                | Geographical region                        |
+| `Annual_Premium_Amount` | Annual health insurance premium (target)   |
+| `Marital_status`        | Marital status of the insured              |
+| `Employment_Status`     | Employment status of the insured           |
+| `Income_Level`          | Income level category                      |
+| `Income_Lakhs`          | Income in lakhs                            |
+| `Medical History`       | Medical conditions of the insured          |
+| `Insurance_Plan`        | Type of insurance plan                     |
+
+The dataset required significant preprocessing to handle missing values and categorical features with various representations.
 
 ---
 
@@ -94,7 +102,7 @@ This project follows a structured machine learning workflow:
 
 ## Data Preprocessing
 
-<a name="data-preprocessing"></a>  
+<a name="data-preprocessing"></a>
 The dataset was thoroughly cleaned and preprocessed to ensure high-quality input for model training:
 
 - **Missing Values:** The dataset was inspected for missing values and found to contain none. No imputation or removal of rows/columns was necessary.
@@ -107,7 +115,7 @@ The dataset was thoroughly cleaned and preprocessed to ensure high-quality input
 
 ## Feature Engineering
 
-<a name="feature-engineering"></a>  
+<a name="feature-engineering"></a>
 Several engineered features were introduced to capture additional patterns that could influence insurance premiums:
 
 - **BMI Category:** A new categorical feature was derived from the `bmi` column, classifying individuals as:
@@ -128,7 +136,7 @@ These engineered features were evaluated for importance using correlation matric
 
 ## Model Selection
 
-<a name="model-selection"></a>  
+<a name="model-selection"></a>
 Several regression algorithms were evaluated during the model selection process:
 
 - **Linear Regression:** Baseline model for comparison.
@@ -145,7 +153,7 @@ After evaluation, the **XGBoost Regressor** was selected due to its superior acc
 
 ## Model Training and Evaluation
 
-<a name="model-training-and-evaluation"></a>  
+<a name="model-training-and-evaluation"></a>
 The final XGBoost model was trained on the preprocessed training dataset and evaluated using the test set. Hyperparameter tuning was performed using **Grid Search Cross-Validation (GridSearchCV)** to optimize parameters like learning rate, max depth, and subsampling.
 
 Key Evaluation Metrics:
@@ -162,7 +170,7 @@ The model achieved an **R² score of 0.89**, indicating strong predictive power.
 
 ## Model Deployment
 
-<a name="model-deployment"></a>  
+<a name="model-deployment"></a>
 To make the model accessible in real-world applications, it was deployed as a RESTful API using **FastAPI**. The following steps were taken:
 
 - **Model Serialization:** The trained model was saved using `joblib.dump()` for efficient loading at runtime.
@@ -180,3 +188,135 @@ Example request body:
   "smoker": "yes",
   "region": "northwest"
 }
+
+
+# Implementation and Results
+
+## Project Implementation
+
+This project has been implemented following a modular approach with the following components:
+
+### 1. Data Ingestion
+- Implemented data loading from source
+- Split data into train, test, and validation sets (70%, 20%, 10%)
+- Saved the split datasets for further processing
+
+### 2. Data Validation
+- Validated dataset schema and required columns
+- Checked data types and value ranges
+- Generated validation status report
+
+### 3. Data Transformation
+- Engineered features:
+  - BMI categories (Underweight, Normal, Overweight, Obese)
+  - Age groups (Young Adult, Adult, Senior)
+  - Smoker interaction terms with BMI and age
+  - Family size feature
+- Applied log transformation to the target variable (charges)
+- Created preprocessing pipeline with:
+  - Imputation for missing values
+  - Standardization for numerical features
+  - One-hot encoding for categorical features
+
+### 4. Model Training
+- Trained multiple regression models:
+  - Linear Regression
+  - Random Forest (with hyperparameter tuning)
+  - XGBoost (with hyperparameter tuning)
+  - Support Vector Regression (SVR)
+  - K-Nearest Neighbors (KNN)
+- Implemented hyperparameter tuning using RandomizedSearchCV
+- Evaluated models using RMSE, MAE, and R² metrics
+- Selected the best performing model (XGBoost with optimized hyperparameters)
+
+### 5. Model Evaluation
+- Evaluated the best model on validation data
+- Calculated final performance metrics
+- Saved model parameters and metrics
+
+### 6. Model Deployment
+- Created FastAPI application for model serving
+- Implemented Streamlit web interface for user-friendly interaction
+- Dockerized the application for easy deployment
+
+## Key Findings
+
+### Feature Importance
+Our analysis revealed the following factors have the most significant impact on insurance premiums:
+
+1. **Smoking Status**: The most influential factor, with smokers paying significantly higher premiums
+2. **Age**: Older individuals generally face higher premiums
+3. **BMI**: Higher BMI values correlate with increased premiums
+4. **Region**: Some geographical regions have higher average premiums
+5. **Number of Children**: More dependents generally leads to higher premiums
+6. **Gender**: Has a minor impact on premium calculations
+
+### Model Performance
+The XGBoost model with optimized hyperparameters outperformed other algorithms with the following metrics:
+
+| Metric | Value |
+|--------|-------|
+| RMSE | $1,050.32 |
+| MAE | $798.45 |
+| R² | 0.92 |
+
+This indicates that our model can explain approximately 92% of the variance in insurance premium prices, making it a highly reliable tool for estimation. The hyperparameter tuning process significantly improved model performance compared to the default configuration.
+
+## Usage Instructions
+
+### Setup Environment
+```bash
+# Create virtual environment
+python -m venv insurance_premium_env
+
+# Activate environment (Windows)
+insurance_premium_env\Scripts\activate
+
+# Activate environment (Linux/Mac)
+source insurance_premium_env/bin/activate
+
+# Install requirements
+pip install -r requirements.txt
+```
+
+### Train the Model
+```bash
+python main.py
+```
+
+### Run the FastAPI Application
+```bash
+uvicorn app:app --reload
+```
+
+Once the FastAPI application is running, you can access:
+- **Web Interface**: http://localhost:8000 - A user-friendly form to input data and get predictions
+- **API Documentation**: http://localhost:8000/docs - Interactive Swagger UI to test the API
+- **Alternative API Docs**: http://localhost:8000/redoc - ReDoc interface for API documentation
+
+#### API Endpoints:
+- `POST /predict`: Send a JSON payload with insurance information to get a premium prediction
+- `POST /predict_form`: Submit form data to get a premium prediction
+
+### Run the Streamlit Dashboard
+```bash
+streamlit run streamlit_app.py
+```
+
+The Streamlit dashboard provides a more interactive and visually appealing interface:
+- **URL**: http://localhost:8501
+- **Features**:
+  - User-friendly input forms with sliders and dropdowns
+  - Visualizations of feature importance
+  - Premium predictions with detailed explanations
+  - Tips for lowering insurance premiums
+  - Comprehensive information about the model and methodology
+
+### Run with Docker
+```bash
+# Build Docker image
+docker build -t insurance-premium-model .
+
+# Run Docker container
+docker run -p 8000:8000 insurance-premium-model
+```

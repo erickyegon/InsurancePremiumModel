@@ -1,0 +1,124 @@
+columns:
+  Age:
+    type: int
+    description: Age of the insured person
+    constraints:
+      min: 18
+      max: 120
+
+  Gender:
+    type: categorical
+    description: Gender of the insured person
+    categories:
+      - Male
+      - Female
+
+  BMI_Category:
+    type: categorical
+    description: Body mass index category of the insured person
+    categories:
+      - Underweight
+      - Normal
+      - Overweight
+      - Obese
+      - Obesity
+
+  Number Of Dependants:
+    type: int
+    description: Number of dependents covered by the insurance
+    constraints:
+      min: -5  # Allow for negative values in the dataset
+      max: 10
+
+  Smoking_Status:
+    type: categorical
+    description: Smoking status of the insured person
+    categories:
+      - Smoker
+      - Non-Smoker
+      - Regular
+      - Occasional
+      - Does Not Smoke
+      - No Smoking
+      - Not Smoking
+      - Smoking=0
+
+  Region:
+    type: categorical
+    description: Region where the insured person lives
+    categories:
+      - Northeast
+      - Northwest
+      - Southeast
+      - Southwest
+
+  Annual_Premium_Amount:
+    type: float
+    description: Insurance premium charges
+    constraints:
+      min: 0.0
+
+  Marital_status:
+    type: categorical
+    description: Marital status of the insured person
+    categories:
+      - Married
+      - Unmarried
+
+  Employment_Status:
+    type: categorical
+    description: Employment status of the insured person
+    categories:
+      - Employed
+      - Unemployed
+      - Self-employed
+      - Self-Employed
+      - Salaried
+      - Freelancer
+
+  Income_Level:
+    type: categorical
+    description: Income level of the insured person
+    categories:
+      - Low
+      - Medium
+      - High
+      - "<10L"
+      - "10L - 25L"
+      - "25L - 40L"
+      - "> 40L"
+
+  Income_Lakhs:
+    type: float
+    description: Income in lakhs
+    constraints:
+      min: 0.0
+
+  Medical History:
+    type: categorical
+    description: Medical history of the insured person
+    categories:
+      - None
+      - No Disease
+      - Diabetes
+      - Heart Disease
+      - Heart disease
+      - Hypertension
+      - High blood pressure
+      - Asthma
+      - Thyroid
+      - Diabetes & Thyroid
+      - Diabetes & Heart disease
+      - Diabetes & High blood pressure
+      - High blood pressure & Heart disease
+
+  Insurance_Plan:
+    type: categorical
+    description: Type of insurance plan
+    categories:
+      - Bronze
+      - Silver
+      - Gold
+      - Platinum
+
+target_column: Annual_Premium_Amount

@@ -1,39 +1,69 @@
+# ============================
 # Core Libraries
+# ============================
 numpy>=1.24.0
 pandas>=1.5.0
+python-box==6.0.2
+openpyxl>=3.0.10  # For Excel file support
 
-# Visualization
+# ============================
+# Data Visualization
+# ============================
+ipympl>=0.8.0              # For interactive plots in notebooks
 matplotlib>=3.6.0
 seaborn>=0.12.0
 
+# ============================
 # Machine Learning
+# ============================
+joblib>=1.2.0
 scikit-learn>=1.2.0
 xgboost>=1.7.0
-joblib>=1.2.0
 
-# FastAPI (for deployment)
+# ============================
+# Web Frameworks / API Deployment
+# ============================
 fastapi>=0.95.0
 uvicorn>=0.21.0
+Flask
+Flask-CORS
 
-# Web Frameworks / UI (optional)
-streamlit>=1.20.0
-
-# API Docs
+# ============================
+# API Docs & Data Validation
+# ============================
 pydantic>=1.10.0
 
-# Configuration & Data Handling
-PyYAML>=6.0
+# ============================
+# Configuration & Environment
+# ============================
 python-dotenv>=1.0.0
+PyYAML>=6.0.0
+types-PyYAML
 
-# Docker & Deployment Utilities
-docker>=6.0.0
-
-# Testing
-pytest>=7.0.0
+# ============================
+# Testing & Coverage
+# ============================
 coverage>=7.2.0
+pytest>=7.0.0
 
-# Jupyter Support
+# ============================
+# Interactive Notebooks
+# ============================
+ipykernel
 jupyterlab>=3.0.0
 notebook>=6.5.0
-ipympl>=0.8.0  # For interactive plots in notebooks
-ipykernel
+
+# ============================
+# Web UI (Optional)
+# ============================
+streamlit>=1.20.0
+
+# ============================
+# Docker & Deployment Utilities
+# ============================
+docker>=6.0.0
+
+# ============================
+# Local Package Installation
+# ============================
+-e .
