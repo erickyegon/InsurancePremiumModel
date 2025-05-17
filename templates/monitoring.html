@@ -48,14 +48,16 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6 text-center">
-                                <div class="metric-card {% if latest_r2 < 0.9 %}bg-danger{% else %}bg-success{% endif %} text-white p-3 rounded">
+                                <div
+                                    class="metric-card {% if latest_r2 < 0.9 %}bg-danger{% else %}bg-success{% endif %} text-white p-3 rounded">
                                     <h3>R² Score</h3>
                                     <h2>{{ "%.4f"|format(latest_r2) }}</h2>
                                     <p>Threshold: 0.9000</p>
                                 </div>
                             </div>
                             <div class="col-md-6 text-center">
-                                <div class="metric-card {% if latest_mae > 200 %}bg-danger{% else %}bg-success{% endif %} text-white p-3 rounded">
+                                <div
+                                    class="metric-card {% if latest_mae > 200 %}bg-danger{% else %}bg-success{% endif %} text-white p-3 rounded">
                                     <h3>MAE</h3>
                                     <h2>${{ "%.2f"|format(latest_mae) }}</h2>
                                     <p>Threshold: $200.00</p>
@@ -83,7 +85,8 @@
                             <h5>Retraining Recommendation:</h5>
                             {% if retraining_recommended %}
                             <div class="alert alert-warning">
-                                <strong>Model Retraining Recommended</strong> due to performance degradation or data drift.
+                                <strong>Model Retraining Recommended</strong> due to performance degradation or data
+                                drift.
                             </div>
                             {% else %}
                             <div class="alert alert-success">
@@ -189,7 +192,7 @@
                         <h5 class="card-title mb-0">Trigger Model Retraining</h5>
                     </div>
                     <div class="card-body">
-                        <form action="/trigger-retraining" method="post">
+                        <form action="/trigger-retraining" method="post" enctype="multipart/form-data">
                             <div class="mb-3">
                                 <label for="reason" class="form-label">Reason for Retraining</label>
                                 <select class="form-select" id="reason" name="reason" required>
@@ -201,11 +204,64 @@
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Data Source for Retraining</label>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Select Data Source Type</label>
+                                            <select class="form-select" id="data_source_type" name="data_source_type"
+                                                required>
+                                                <option value="">Select data source type</option>
+                                                <option value="file_upload">File Upload</option>
+                                                <option value="file_path">File Path</option>
+                                                <option value="url">URL</option>
+                                                <option value="default">Use Default Training Data</option>
+                                            </select>
+                                        </div>
+
+                                        <div id="file_upload_section" class="data-source-section mb-3"
+                                            style="display:none;">
+                                            <label for="file_upload" class="form-label">Upload Data File (Excel or
+                                                CSV)</label>
+                                            <input type="file" class="form-control" id="file_upload" name="file_upload"
+                                                accept=".csv,.xls,.xlsx">
+                                            <div class="form-text">Maximum file size: 50MB</div>
+                                        </div>
+
+                                        <div id="file_path_section" class="data-source-section mb-3"
+                                            style="display:none;">
+                                            <label for="file_path" class="form-label">Data File Path</label>
+                                            <input type="text" class="form-control" id="file_path" name="file_path"
+                                                placeholder="e.g., data/new_premiums.xlsx">
+                                            <div class="form-text">Path must be relative to the application root</div>
+                                        </div>
+
+                                        <div id="url_section" class="data-source-section mb-3" style="display:none;">
+                                            <label for="data_url" class="form-label">Data URL</label>
+                                            <input type="url" class="form-control" id="data_url" name="data_url"
+                                                placeholder="https://example.com/data.csv">
+                                            <div class="form-text">URL must point to a CSV or Excel file</div>
+                                        </div>
+
+                                        <div id="default_section" class="data-source-section mb-3"
+                                            style="display:none;">
+                                            <div class="alert alert-info mb-0">
+                                                <i class="bi bi-info-circle-fill me-2"></i>
+                                                The model will be retrained using the default training dataset.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="requested_by" class="form-label">Requested By</label>
-                                        <input type="text" class="form-control" id="requested_by" name="requested_by" required>
+                                        <input type="text" class="form-control" id="requested_by" name="requested_by"
+                                            required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -215,10 +271,41 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="validate_data"
+                                        name="validate_data" value="true" checked>
+                                    <label class="form-check-label" for="validate_data">
+                                        Validate data before retraining (recommended)
+                                    </label>
+                                </div>
+                            </div>
+
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary">Trigger Model Retraining</button>
                             </div>
                         </form>
+
+                        <script>
+                            // Show/hide data source sections based on selection
+                            document.getElementById('data_source_type').addEventListener('change', function () {
+                                // Hide all sections first
+                                document.querySelectorAll('.data-source-section').forEach(function (section) {
+                                    section.style.display = 'none';
+                                });
+
+                                // Show the selected section
+                                const selectedValue = this.value;
+                                if (selectedValue) {
+                                    const sectionId = selectedValue + '_section';
+                                    const section = document.getElementById(sectionId);
+                                    if (section) {
+                                        section.style.display = 'block';
+                                    }
+                                }
+                            });
+                        </script>
                     </div>
                 </div>
             </div>
@@ -226,7 +313,8 @@
 
         <footer class="text-center mt-4">
             <div class="mb-2">
-                <strong>Developed by:</strong> Erick K. Yegon, PhD | <a href="mailto:keyegon@gmail.com">keyegon@gmail.com</a>
+                <strong>Developed by:</strong> Erick K. Yegon, PhD | <a
+                    href="mailto:keyegon@gmail.com">keyegon@gmail.com</a>
             </div>
             <p>© 2025 Insurance Premium Prediction Model</p>
         </footer>
@@ -235,7 +323,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Performance chart
-        const performanceData = {{ performance_data|tojson }};
+        const performanceData = {{ performance_data| tojson }};
         const dates = performanceData.map(item => item.date);
         const r2Values = performanceData.map(item => item.r2_score);
         const maeValues = performanceData.map(item => item.mae);

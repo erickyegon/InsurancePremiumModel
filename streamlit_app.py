@@ -1019,23 +1019,72 @@ def render_footer():
 
 
 # Error handling wrapper for the main app
-def trigger_model_retraining():
-    """Simulate triggering a model retraining process."""
-    with st.spinner("Initiating model retraining process..."):
-        # Simulate a delay for the retraining process
-        time.sleep(2)
+def trigger_model_retraining(data_source_type="default", file_path=None, uploaded_file=None, data_url=None, validate_data=True):
+    """
+    Simulate triggering a model retraining process with the specified data source.
+
+    Args:
+        data_source_type: Type of data source ('default', 'file_path', 'uploaded_file', or 'url')
+        file_path: Path to the data file (if data_source_type is 'file_path')
+        uploaded_file: Uploaded file object (if data_source_type is 'uploaded_file')
+        data_url: URL to the data file (if data_source_type is 'url')
+        validate_data: Whether to validate the data before retraining
+    """
+    # Display appropriate message based on data source
+    data_source_info = ""
+    if data_source_type == "uploaded_file" and uploaded_file is not None:
+        data_source_info = f"using uploaded file '{uploaded_file.name}'"
+    elif data_source_type == "file_path" and file_path:
+        data_source_info = f"using file path '{file_path}'"
+    elif data_source_type == "url" and data_url:
+        data_source_info = f"using data from URL '{data_url}'"
+    else:
+        data_source_info = "using default training data"
+
+    with st.spinner(f"Initiating model retraining process {data_source_info}..."):
+        # Simulate data loading and validation
+        time.sleep(1)
+
+        # Show data processing steps
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+
+        # Simulate data ingestion
+        status_text.text("Step 1/5: Ingesting data...")
+        progress_bar.progress(10)
+        time.sleep(1)
+
+        # Simulate data validation
+        status_text.text("Step 2/5: Validating data...")
+        progress_bar.progress(30)
+        time.sleep(1)
+
+        # Simulate data preprocessing
+        status_text.text("Step 3/5: Preprocessing data...")
+        progress_bar.progress(50)
+        time.sleep(1)
+
+        # Simulate model training
+        status_text.text("Step 4/5: Training model...")
+        progress_bar.progress(80)
+        time.sleep(1)
+
+        # Simulate model evaluation
+        status_text.text("Step 5/5: Evaluating model...")
+        progress_bar.progress(100)
+        time.sleep(1)
+
+        # Clear progress indicators
+        status_text.empty()
+        progress_bar.empty()
 
         # Log the retraining request
         logger.info(
-            f"Model retraining triggered by user: {st.session_state.get('session_id', 'unknown')}")
-
-        # In a real implementation, this would:
-        # 1. Call an API endpoint to trigger retraining
-        # 2. Queue a retraining job in the ML pipeline
-        # 3. Update the model registry with a retraining request
+            f"Model retraining triggered by user: {st.session_state.get('session_id', 'unknown')} {data_source_info}")
 
         # For demo purposes, we'll just show a success message
-        st.success("✅ Retraining request submitted successfully!")
+        st.success(
+            f"✅ Retraining request submitted successfully {data_source_info}!")
         st.info("""
         **Retraining Process Initiated**
 
@@ -1053,6 +1102,7 @@ def trigger_model_retraining():
         # Add a record to the retraining history
         st.session_state.retraining_requested = True
         st.session_state.retraining_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        st.session_state.retraining_data_source = data_source_type
 
 
 def render_instructions():
@@ -1235,9 +1285,14 @@ def render_instructions():
 
         1. Go to the Model Monitoring tab
         2. Review the monitoring metrics to confirm retraining is needed
-        3. Scroll to the bottom of any monitoring section
-        4. Click the "Trigger Model Retraining" button
-        5. Confirm your decision in the dialog that appears
+        3. Scroll to the bottom of the page to the retraining section
+        4. Select a data source for retraining:
+           - **Default Training Data**: Uses the original training dataset
+           - **Upload New Data**: Upload a new CSV or Excel file with training data
+           - **Specify File Path**: Enter the path to a data file on the server
+           - **Load from URL**: Provide a URL to a CSV or Excel file
+        5. If uploading a file, you'll see a preview of the data to verify it's correct
+        6. Click the "Trigger Model Retraining" button
 
         #### What Happens During Retraining
 
@@ -1260,13 +1315,68 @@ def render_instructions():
         4. The retraining history will be updated
         """)
 
-        # Add retraining button
+        # Add retraining section
         st.markdown("### Try the Retraining Process")
         st.markdown(
-            "You can trigger a simulated retraining process to see how it works:")
+            "You can test the model retraining process with different data sources:")
+
+        # Data source selection for instructions tab
+        data_source_type_instructions = st.selectbox(
+            "Select Data Source Type",
+            options=["default", "file_upload", "file_path", "url"],
+            format_func=lambda x: {
+                "default": "Use Default Training Data",
+                "file_upload": "Upload New Data File",
+                "file_path": "Specify File Path",
+                "url": "Load Data from URL"
+            }.get(x, x),
+            key="data_source_type_instructions"
+        )
+
+        # Show appropriate input based on data source type
+        file_path_instructions = None
+        uploaded_file_instructions = None
+        data_url_instructions = None
+
+        if data_source_type_instructions == "file_upload":
+            uploaded_file_instructions = st.file_uploader(
+                "Upload Training Data (CSV or Excel)",
+                type=["csv", "xlsx", "xls"],
+                key="instructions_file_upload"
+            )
+
+        elif data_source_type_instructions == "file_path":
+            file_path_instructions = st.text_input(
+                "Enter File Path",
+                placeholder="e.g., data/new_premiums.csv",
+                key="instructions_file_path"
+            )
+
+        elif data_source_type_instructions == "url":
+            data_url_instructions = st.text_input(
+                "Enter URL to Data File",
+                placeholder="https://example.com/data.csv",
+                key="instructions_data_url"
+            )
+
+        elif data_source_type_instructions == "default":
+            st.info("The model will be retrained using the default training dataset.")
+
+        # Validate data option
+        validate_data_instructions = st.checkbox(
+            "Validate data before retraining",
+            value=True,
+            key="validate_data_instructions"
+        )
 
         if st.button("🔄 Trigger Model Retraining", key="instruction_retrain_button"):
-            trigger_model_retraining()
+            trigger_model_retraining(
+                data_source_type=data_source_type_instructions,
+                file_path=file_path_instructions,
+                uploaded_file=uploaded_file_instructions,
+                data_url=data_url_instructions,
+                validate_data=validate_data_instructions
+            )
 
 
 def render_model_monitoring():
@@ -1884,15 +1994,80 @@ def render_model_monitoring():
 
         st.table(retraining_history)
 
-        # Add retraining button
+        # Retraining section
         st.markdown("### Trigger Model Retraining")
+
+        # Data source selection
+        st.markdown("#### Select Data Source for Retraining")
+
+        data_source_type = st.selectbox(
+            "Data Source Type",
+            options=["default", "file_upload", "file_path", "url"],
+            format_func=lambda x: {
+                "default": "Use Default Training Data",
+                "file_upload": "Upload New Data File",
+                "file_path": "Specify File Path",
+                "url": "Load Data from URL"
+            }.get(x, x),
+            key="data_source_type"
+        )
+
+        # Show appropriate input based on data source type
+        file_path = None
+        uploaded_file = None
+        data_url = None
+
+        if data_source_type == "file_upload":
+            uploaded_file = st.file_uploader(
+                "Upload Training Data (CSV or Excel)",
+                type=["csv", "xlsx", "xls"],
+                key="retraining_file_upload"
+            )
+            if uploaded_file is not None:
+                st.success(f"File uploaded: {uploaded_file.name}")
+
+                # Show a preview of the uploaded file
+                if uploaded_file.name.endswith('.csv'):
+                    df_preview = pd.read_csv(uploaded_file, nrows=5)
+                else:
+                    df_preview = pd.read_excel(uploaded_file, nrows=5)
+
+                st.markdown("#### Data Preview")
+                st.dataframe(df_preview)
+
+        elif data_source_type == "file_path":
+            file_path = st.text_input(
+                "Enter File Path (relative to application root)",
+                placeholder="e.g., data/new_premiums.csv",
+                key="retraining_file_path"
+            )
+
+        elif data_source_type == "url":
+            data_url = st.text_input(
+                "Enter URL to Data File (CSV or Excel)",
+                placeholder="https://example.com/data.csv",
+                key="retraining_data_url"
+            )
+
+        elif data_source_type == "default":
+            st.info("The model will be retrained using the default training dataset.")
+
+        # Data validation option
+        validate_data = st.checkbox(
+            "Validate data before retraining (recommended)", value=True, key="validate_data")
 
         # Create columns for the button and explanation
         col1, col2 = st.columns([1, 2])
 
         with col1:
             if st.button("🔄 Trigger Model Retraining", key="monitoring_retrain_button"):
-                trigger_model_retraining()
+                trigger_model_retraining(
+                    data_source_type=data_source_type,
+                    file_path=file_path,
+                    uploaded_file=uploaded_file,
+                    data_url=data_url,
+                    validate_data=validate_data
+                )
 
         with col2:
             st.markdown("""

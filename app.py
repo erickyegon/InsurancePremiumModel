@@ -11,15 +11,16 @@ import sys
 import os
 import json
 import random
+import time
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
-from fastapi import FastAPI, Request, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Request, Form, HTTPException, BackgroundTasks, UploadFile, File
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
-from typing import Literal, Dict, List, Optional, Union
+from typing import Literal
 
 # Add the current directory to the path so we can import the package
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -116,26 +117,323 @@ def get_retraining_history():
 
 
 # Simulate model retraining process
-def retrain_model_task(reason: str, requested_by: str):
-    """Background task to simulate model retraining."""
+# Data ingestion for retraining
+def ingest_data_for_retraining(data_source_type: str, file_path: str = None, file_upload=None, data_url: str = None):
+    """
+    Ingest data for model retraining from various sources.
+
+    Args:
+        data_source_type: Type of data source ('file_path', 'file_upload', 'url', or 'default')
+        file_path: Path to the data file (if data_source_type is 'file_path')
+        file_upload: Uploaded file object (if data_source_type is 'file_upload')
+        data_url: URL to the data file (if data_source_type is 'url')
+
+    Returns:
+        DataFrame: The ingested data
+        str: Path to the saved data file
+    """
+    logger.info(
+        f"Ingesting data for retraining from source type: {data_source_type}")
+
+    # Create directory for retraining data if it doesn't exist
+    retraining_data_dir = os.path.join(MONITORING_DATA_PATH, "retraining_data")
+    os.makedirs(retraining_data_dir, exist_ok=True)
+
+    # Generate a unique filename for the data
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    data_filename = f"retraining_data_{timestamp}.csv"
+    data_file_path = os.path.join(retraining_data_dir, data_filename)
+
+    try:
+        # Load data based on source type
+        if data_source_type == "default":
+            # Use default training data
+            logger.info("Using default training data")
+            # In a real implementation, this would load the original training data
+            # For this demo, we'll use a sample dataset
+            df = pd.DataFrame({
+                "Age": np.random.randint(18, 80, 1000),
+                "Gender": np.random.choice(["Male", "Female"], 1000),
+                "BMI_Category": np.random.choice(["Underweight", "Normal", "Overweight", "Obese"], 1000),
+                "Number_Of_Dependants": np.random.randint(0, 5, 1000),
+                "Smoking_Status": np.random.choice(["Smoker", "Non-Smoker"], 1000),
+                "Region": np.random.choice(["Northeast", "Northwest", "Southeast", "Southwest"], 1000),
+                "Annual_Premium_Amount": np.random.uniform(5000, 50000, 1000)
+            })
+
+        elif data_source_type == "file_path":
+            # Load data from file path
+            logger.info(f"Loading data from file path: {file_path}")
+            if file_path.endswith('.csv'):
+                df = pd.read_csv(file_path)
+            elif file_path.endswith(('.xls', '.xlsx')):
+                df = pd.read_excel(file_path)
+            else:
+                raise ValueError(f"Unsupported file format: {file_path}")
+
+        elif data_source_type == "file_upload":
+            # Load data from uploaded file
+            logger.info("Loading data from uploaded file")
+            # Save the uploaded file
+            temp_file_path = os.path.join(
+                retraining_data_dir, f"temp_{data_filename}")
+            with open(temp_file_path, "wb") as temp_file:
+                temp_file.write(file_upload.file.read())
+
+            # Read the file based on its extension
+            file_extension = os.path.splitext(file_upload.filename)[1].lower()
+            if file_extension == '.csv':
+                df = pd.read_csv(temp_file_path)
+            elif file_extension in ('.xls', '.xlsx'):
+                df = pd.read_excel(temp_file_path)
+            else:
+                raise ValueError(
+                    f"Unsupported file format: {file_upload.filename}")
+
+            # Remove the temporary file
+            os.remove(temp_file_path)
+
+        elif data_source_type == "url":
+            # Load data from URL
+            logger.info(f"Loading data from URL: {data_url}")
+            # Determine file type from URL
+            if data_url.endswith('.csv'):
+                df = pd.read_csv(data_url)
+            elif data_url.endswith(('.xls', '.xlsx')):
+                df = pd.read_excel(data_url)
+            else:
+                raise ValueError(f"Unsupported file format in URL: {data_url}")
+        else:
+            raise ValueError(
+                f"Unsupported data source type: {data_source_type}")
+
+        # Save the ingested data to a standard format
+        df.to_csv(data_file_path, index=False)
+        logger.info(
+            f"Data ingestion successful. Data saved to {data_file_path}")
+
+        return df, data_file_path
+
+    except Exception as e:
+        logger.error(f"Error during data ingestion: {str(e)}")
+        raise
+
+# Data validation for retraining
+
+
+def validate_data_for_retraining(df):
+    """
+    Validate the ingested data for model retraining.
+
+    Args:
+        df: DataFrame containing the ingested data
+
+    Returns:
+        bool: True if validation passed, False otherwise
+        dict: Validation results with details
+    """
+    logger.info("Validating data for retraining")
+
+    validation_results = {
+        "passed": True,
+        "errors": [],
+        "warnings": []
+    }
+
+    try:
+        # Check if required columns are present
+        required_columns = ["Age", "Gender", "BMI_Category", "Number_Of_Dependants",
+                            "Smoking_Status", "Region", "Annual_Premium_Amount"]
+
+        missing_columns = [
+            col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            validation_results["passed"] = False
+            validation_results["errors"].append(
+                f"Missing required columns: {', '.join(missing_columns)}")
+
+        # Check data types
+        if "Age" in df.columns and not pd.api.types.is_numeric_dtype(df["Age"]):
+            validation_results["errors"].append("Age column must be numeric")
+            validation_results["passed"] = False
+
+        if "Annual_Premium_Amount" in df.columns and not pd.api.types.is_numeric_dtype(df["Annual_Premium_Amount"]):
+            validation_results["errors"].append(
+                "Annual_Premium_Amount column must be numeric")
+            validation_results["passed"] = False
+
+        # Check for missing values
+        missing_values = df.isnull().sum()
+        if missing_values.sum() > 0:
+            validation_results["warnings"].append(
+                f"Dataset contains missing values: {missing_values[missing_values > 0].to_dict()}")
+
+        # Check data ranges
+        if "Age" in df.columns:
+            if df["Age"].min() < 18 or df["Age"].max() > 100:
+                validation_results["warnings"].append(
+                    f"Age values outside expected range (18-100): min={df['Age'].min()}, max={df['Age'].max()}")
+
+        # Check categorical values
+        if "Gender" in df.columns:
+            valid_genders = ["Male", "Female"]
+            invalid_genders = df[~df["Gender"].isin(
+                valid_genders)]["Gender"].unique()
+            if len(invalid_genders) > 0:
+                validation_results["warnings"].append(
+                    f"Invalid Gender values: {', '.join(map(str, invalid_genders))}")
+
+        # Check dataset size
+        if len(df) < 100:
+            validation_results["warnings"].append(
+                f"Dataset is small ({len(df)} rows). Model performance may be affected.")
+
+        logger.info(
+            f"Data validation completed. Passed: {validation_results['passed']}")
+        if validation_results["errors"]:
+            logger.error(f"Validation errors: {validation_results['errors']}")
+        if validation_results["warnings"]:
+            logger.warning(
+                f"Validation warnings: {validation_results['warnings']}")
+
+        return validation_results["passed"], validation_results
+
+    except Exception as e:
+        logger.error(f"Error during data validation: {str(e)}")
+        validation_results["passed"] = False
+        validation_results["errors"].append(f"Validation error: {str(e)}")
+        return False, validation_results
+
+
+def retrain_model_task(reason: str, requested_by: str, data_source_type: str = "default",
+                       file_path: str = None, file_upload=None, data_url: str = None,
+                       validate_data: bool = True):
+    """
+    Background task to simulate model retraining with data ingestion.
+
+    Args:
+        reason: Reason for retraining
+        requested_by: Name of the person requesting retraining
+        data_source_type: Type of data source ('file_path', 'file_upload', 'url', or 'default')
+        file_path: Path to the data file (if data_source_type is 'file_path')
+        file_upload: Uploaded file object (if data_source_type is 'file_upload')
+        data_url: URL to the data file (if data_source_type is 'url')
+        validate_data: Whether to validate the data before retraining
+    """
     logger.info(
         f"Starting model retraining requested by {requested_by}. Reason: {reason}")
 
-    # Record retraining status
+    # Record initial retraining status
     status = {
         "status": "pending",
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "reason": reason,
-        "requested_by": requested_by
+        "requested_by": requested_by,
+        "data_source_type": data_source_type,
+        "progress": "Initializing retraining process",
+        "validation_results": None,
+        "completion_time": None
     }
 
-    # Save status to file
-    with open(os.path.join(MONITORING_DATA_PATH, "retraining_status.json"), 'w') as f:
+    # Save initial status to file
+    status_file_path = os.path.join(
+        MONITORING_DATA_PATH, "retraining_status.json")
+    with open(status_file_path, 'w') as f:
         json.dump(status, f)
 
-    # In a real implementation, this would trigger an ML pipeline job
-    # For this demo, we'll just log the request
-    logger.info("Model retraining task completed")
+    try:
+        # Step 1: Data Ingestion
+        status["progress"] = "Ingesting data"
+        with open(status_file_path, 'w') as f:
+            json.dump(status, f)
+
+        df, data_file_path = ingest_data_for_retraining(
+            data_source_type=data_source_type,
+            file_path=file_path,
+            file_upload=file_upload,
+            data_url=data_url
+        )
+
+        # Step 2: Data Validation (if enabled)
+        if validate_data:
+            status["progress"] = "Validating data"
+            with open(status_file_path, 'w') as f:
+                json.dump(status, f)
+
+            validation_passed, validation_results = validate_data_for_retraining(
+                df)
+            status["validation_results"] = validation_results
+
+            if not validation_passed:
+                status["status"] = "failed"
+                status["progress"] = "Data validation failed"
+                with open(status_file_path, 'w') as f:
+                    json.dump(status, f)
+                logger.error("Model retraining failed: Data validation failed")
+                return
+
+        # Step 3: Data Preprocessing
+        status["progress"] = "Preprocessing data"
+        with open(status_file_path, 'w') as f:
+            json.dump(status, f)
+
+        # In a real implementation, this would preprocess the data
+        # For this demo, we'll just simulate preprocessing
+        logger.info("Preprocessing data for retraining")
+        time.sleep(2)  # Simulate preprocessing time
+
+        # Step 4: Model Training
+        status["progress"] = "Training model"
+        with open(status_file_path, 'w') as f:
+            json.dump(status, f)
+
+        # In a real implementation, this would train the model
+        # For this demo, we'll just simulate training
+        logger.info("Training model with new data")
+        time.sleep(3)  # Simulate training time
+
+        # Step 5: Model Evaluation
+        status["progress"] = "Evaluating model"
+        with open(status_file_path, 'w') as f:
+            json.dump(status, f)
+
+        # In a real implementation, this would evaluate the model
+        # For this demo, we'll just simulate evaluation
+        logger.info("Evaluating retrained model")
+        time.sleep(2)  # Simulate evaluation time
+
+        # Step 6: Model Registration
+        status["progress"] = "Registering model"
+        with open(status_file_path, 'w') as f:
+            json.dump(status, f)
+
+        # In a real implementation, this would register the model
+        # For this demo, we'll just simulate registration
+        logger.info("Registering retrained model")
+        time.sleep(1)  # Simulate registration time
+
+        # Update status to completed
+        status["status"] = "completed"
+        status["progress"] = "Retraining completed successfully"
+        status["completion_time"] = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S")
+
+        with open(status_file_path, 'w') as f:
+            json.dump(status, f)
+
+        logger.info("Model retraining completed successfully")
+
+    except Exception as e:
+        logger.error(f"Error during model retraining: {str(e)}")
+        status["status"] = "failed"
+        status["progress"] = f"Retraining failed: {str(e)}"
+
+        with open(status_file_path, 'w') as f:
+            json.dump(status, f)
+
+        # In a real implementation, this would send a notification about the failure
+        # For this demo, we'll just log the error
+        logger.error("Model retraining task failed")
 
 
 # Create FastAPI app
@@ -356,19 +654,30 @@ async def trigger_retraining_form(
     background_tasks: BackgroundTasks,
     reason: str = Form(...),
     requested_by: str = Form(...),
-    email: str = Form(...)
+    email: str = Form(...),
+    data_source_type: str = Form(...),
+    file_path: str = Form(None),
+    file_upload: UploadFile = File(None),
+    data_url: str = Form(None),
+    validate_data: bool = Form(True)
 ):
     """
-    Process the retraining form submission.
+    Process the retraining form submission with data source selection.
     """
     try:
-        logger.info(f"Received retraining request from {requested_by}")
+        logger.info(
+            f"Received retraining request from {requested_by} with data source type: {data_source_type}")
 
-        # Add retraining task to background tasks
+        # Add retraining task to background tasks with data source information
         background_tasks.add_task(
             retrain_model_task,
-            reason,
-            requested_by
+            reason=reason,
+            requested_by=requested_by,
+            data_source_type=data_source_type,
+            file_path=file_path,
+            file_upload=file_upload,
+            data_url=data_url,
+            validate_data=validate_data
         )
 
         # Get monitoring data for the response
@@ -384,6 +693,17 @@ async def trigger_retraining_form(
         )
         retraining_recommended = drift_detected or latest_r2 < 0.9
 
+        # Prepare success message based on data source
+        data_source_info = ""
+        if data_source_type == "file_upload" and file_upload:
+            data_source_info = f" using uploaded file '{file_upload.filename}'"
+        elif data_source_type == "file_path" and file_path:
+            data_source_info = f" using file path '{file_path}'"
+        elif data_source_type == "url" and data_url:
+            data_source_info = f" using data from URL '{data_url}'"
+        elif data_source_type == "default":
+            data_source_info = " using default training data"
+
         # Return to monitoring page with success message
         return templates.TemplateResponse(
             "monitoring.html",
@@ -398,7 +718,7 @@ async def trigger_retraining_form(
                 "features_with_drift": features_with_drift,
                 "retraining_recommended": retraining_recommended,
                 "retraining_success": True,
-                "retraining_message": f"Model retraining has been initiated. You will be notified at {email} when the process is complete."
+                "retraining_message": f"Model retraining has been initiated{data_source_info}. You will be notified at {email} when the process is complete."
             }
         )
     except Exception as e:
