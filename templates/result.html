@@ -24,6 +24,9 @@
 
                         <div class="alert alert-success text-center">
                             <h3 class="mb-0">Estimated Premium: <strong>{{ prediction }}</strong></h3>
+                            {% if lower_bound and upper_bound %}
+                            <p class="mt-2">Confidence Interval: {{ lower_bound }} - {{ upper_bound }}</p>
+                            {% endif %}
                         </div>
 
                         <div class="mt-4">
@@ -58,8 +61,18 @@
                             </table>
                         </div>
 
+                        {% if feature_importance %}
+                        <div class="mt-4">
+                            <h4>Key Factors Influencing Premium:</h4>
+                            <div class="chart-container" style="position: relative; height:300px;">
+                                <canvas id="featureImportanceChart"></canvas>
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <div class="d-grid gap-2 mt-4">
                             <a href="/" class="btn btn-primary">Make Another Prediction</a>
+                            <a href="/monitoring" class="btn btn-outline-primary">View Model Monitoring</a>
                         </div>
                     </div>
                 </div>
@@ -76,6 +89,69 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    {% if feature_importance %}
+    <script>
+        // Feature importance chart
+        const ctx = document.getElementById('featureImportanceChart').getContext('2d');
+
+        // Sort feature importance data
+        const featureImportance = {{ feature_importance| tojson }};
+        const sortedEntries = Object.entries(featureImportance).sort((a, b) => b[1] - a[1]);
+        const features = sortedEntries.map(entry => entry[0].charAt(0).toUpperCase() + entry[0].slice(1));
+        const values = sortedEntries.map(entry => entry[1]);
+
+        // Generate colors based on importance
+        const colors = values.map(value => {
+            const hue = 200 + (1 - value) * 120; // Blue to green gradient
+            return `hsla(${hue}, 70%, 50%, 0.8)`;
+        });
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: features,
+                datasets: [{
+                    label: 'Importance',
+                    data: values,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.8', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.raw;
+                                return `Importance: ${(value * 100).toFixed(1)}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: Math.max(...values) * 1.1,
+                        ticks: {
+                            callback: function (value) {
+                                return (value * 100).toFixed(0) + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+    {% endif %}
 </body>
 
 </html>

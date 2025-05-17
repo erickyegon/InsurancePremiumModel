@@ -606,23 +606,62 @@ Once the FastAPI application is running, you can access:
 - **API Documentation**: http://localhost:8000/docs - Interactive Swagger UI to test the API
 - **Alternative API Docs**: http://localhost:8000/redoc - ReDoc interface for API documentation
 
+#### Enhanced Web Interface:
+- **Modern UI**: Clean, professional design with intuitive navigation
+- **Interactive Forms**: User-friendly input forms with validation
+- **Visualizations**: Feature importance charts and confidence intervals
+- **Navigation**: Easy access to prediction, monitoring, and documentation pages
+
 #### API Endpoints:
-- `POST /predict`: Send a JSON payload with insurance information to get a premium prediction
-- `POST /predict_form`: Submit form data to get a premium prediction
+- **Prediction Endpoints**:
+  - `POST /predict`: JSON-based prediction with confidence intervals and feature importance
+  - `POST /predict_form`: Form-based prediction with detailed results
+  - `POST /api/predict/enhanced`: Advanced prediction with additional features
+
+- **Monitoring Endpoints**:
+  - `GET /monitoring`: Interactive model monitoring dashboard
+  - `GET /api/monitoring/metrics`: Current model performance metrics
+  - `GET /api/monitoring/drift`: Data drift detection results
+  - `GET /api/monitoring/performance`: Historical performance data
+  - `GET /api/monitoring/retraining-history`: Model version history
+
+- **MLOps Endpoints**:
+  - `POST /trigger-retraining`: Trigger model retraining with notification
+  - `GET /instructions`: Comprehensive user guide and documentation
 
 ### Run the Streamlit Dashboard
 ```bash
 streamlit run streamlit_app.py
 ```
 
-The Streamlit dashboard provides a more interactive and visually appealing interface:
-- **URL**: http://localhost:8501
-- **Features**:
-  - User-friendly input forms with sliders and dropdowns
-  - Visualizations of feature importance
-  - Premium predictions with detailed explanations
-  - Tips for lowering insurance premiums
-  - Comprehensive information about the model and methodology
+The Streamlit dashboard provides a comprehensive, interactive interface with multiple tabs:
+
+#### Premium Calculator Tab
+- **User-friendly Input Forms**: Intuitive sliders and dropdowns for all customer attributes
+- **Comparison Mode**: Side-by-side comparison of different customer profiles
+- **Instant Predictions**: Real-time premium calculations with confidence intervals
+- **Feature Importance**: Interactive visualizations showing factors influencing premiums
+- **What-If Analysis**: Tools to explore how changing inputs affects premium estimates
+
+#### Model Monitoring Tab
+- **Performance Metrics**: Real-time tracking of R² score and MAE with trend analysis
+- **Data Drift Detection**: Statistical tests and visualizations for feature distribution changes
+- **Prediction Distribution**: Analysis of how predictions have changed over time
+- **Retraining History**: Complete log of model versions and performance improvements
+- **One-Click Retraining**: Button to trigger model retraining with email notifications
+
+#### Instructions Tab
+- **Step-by-Step Guides**: Comprehensive instructions for using all dashboard features
+- **Interactive Examples**: Sample scenarios with explanations
+- **Model Documentation**: Detailed information about the model methodology
+- **Interpretation Guidelines**: Help understanding prediction results and confidence intervals
+- **MLOps Workflow**: Documentation of the monitoring and retraining process
+
+#### Key Benefits
+- **Professional Design**: Clean, modern interface suitable for business environments
+- **Responsive Layout**: Works well on different screen sizes and devices
+- **Comprehensive Documentation**: Built-in help and guidance for all features
+- **End-to-End MLOps**: Complete workflow from prediction to monitoring to retraining
 
 ### Run with Docker
 ```bash
@@ -637,54 +676,55 @@ docker run -p 8000:8000 insurance-premium-model
 
 This project includes a comprehensive MLOps implementation to ensure model quality, reliability, and maintainability in production.
 
-### Model Monitoring
+### Model Monitoring Dashboard
 
-The model monitoring system tracks:
+We've implemented a dedicated model monitoring dashboard that provides real-time insights into model performance and data drift:
 
 1. **Data Drift Detection**
-   - Monitors changes in feature distributions over time
-   - Uses statistical tests (Kolmogorov-Smirnov, Chi-squared) to detect drift
-   - Configurable thresholds for each feature
-   - Generates detailed drift reports with visualizations
+   - Interactive visualization of feature distributions over time
+   - Statistical tests (Kolmogorov-Smirnov, Chi-squared) to detect drift with p-value reporting
+   - Feature-level drift analysis with detailed metrics
+   - Color-coded status indicators for quick assessment
 
 2. **Model Performance Tracking**
-   - Tracks key metrics (RMSE, MAE, R²) over time
-   - Detects performance degradation
-   - Logs predictions and actual values for analysis
-   - Generates performance visualizations
+   - Real-time visualization of key metrics (R², MAE) with trend analysis
+   - Performance thresholds with visual indicators
+   - Historical performance data with interactive charts
+   - Segment-level performance analysis
 
-3. **Retraining Triggers**
-   - Automatically identifies when model retraining is needed
-   - Triggers based on:
-     - Data drift exceeding thresholds
-     - Performance degradation
-     - Time-based schedules
-     - Minimum new data requirements
+3. **Retraining Management**
+   - One-click model retraining functionality
+   - Comprehensive retraining history with version tracking
+   - Detailed retraining logs with performance improvements
+   - Email notifications for retraining completion
 
-4. **Alerting System**
-   - Sends notifications for critical events
-   - Supports email, Slack, and Azure Application Insights
-   - Configurable severity levels and recipients
+4. **Monitoring Dashboard Features**
+   - User-friendly interface with intuitive navigation
+   - Interactive visualizations with drill-down capabilities
+   - Automated recommendations for model maintenance
+   - Comprehensive documentation and user guides
 
-### Model Versioning
+### Model Versioning and Registry
 
 The model registry system provides:
 
 1. **Version Control**
-   - Tracks all model versions with metadata
-   - Stores performance metrics for each version
-   - Maintains production designation
+   - Semantic versioning (MAJOR.MINOR.PATCH) for all models
+   - Detailed version history with timestamps and authors
+   - Performance metrics for each version
+   - Automated version promotion workflow
 
 2. **Model Metadata**
    - Algorithm details and hyperparameters
-   - Training dataset information
-   - Performance metrics
-   - Custom tags and descriptions
+   - Training dataset information and schema
+   - Performance metrics across different data segments
+   - Feature importance and model interpretability metrics
 
 3. **Model Deployment Management**
-   - Promotes models to production
-   - Manages model rollbacks
-   - Tracks deployment history
+   - One-click promotion of models to production
+   - Automated canary deployments with performance validation
+   - Instant rollback capabilities for production incidents
+   - Comprehensive deployment logs and audit trails
 
 ## Azure Deployment
 

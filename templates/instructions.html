@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructions - Insurance Premium Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header class="text-center my-4">
+            <h1>Insurance Premium Prediction</h1>
+            <p class="lead">User Guide & Instructions</p>
+        </header>
+
+        <nav class="mb-4">
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/monitoring">Model Monitoring</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/instructions">Instructions</a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="row">
+            <div class="col-md-3">
+                <div class="list-group sticky-top" style="top: 20px;">
+                    <a href="#using-calculator" class="list-group-item list-group-item-action">Using the Calculator</a>
+                    <a href="#understanding-results" class="list-group-item list-group-item-action">Understanding Results</a>
+                    <a href="#model-monitoring" class="list-group-item list-group-item-action">Model Monitoring</a>
+                    <a href="#model-retraining" class="list-group-item list-group-item-action">Model Retraining</a>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <section id="using-calculator">
+                            <h2 class="card-title">Using the Premium Calculator</h2>
+                            <hr>
+                            <p>The Insurance Premium Calculator allows you to estimate insurance premiums based on customer information. Follow these steps to use the calculator:</p>
+                            
+                            <h5>Step 1: Enter Customer Information</h5>
+                            <p>Fill out all the required fields in the form:</p>
+                            <ul>
+                                <li><strong>Age:</strong> Customer's age (18-120)</li>
+                                <li><strong>Gender:</strong> Customer's gender</li>
+                                <li><strong>BMI Category:</strong> Body Mass Index category</li>
+                                <li><strong>Number of Dependants:</strong> Number of dependents covered by the insurance</li>
+                                <li><strong>Smoking Status:</strong> Whether the customer smokes</li>
+                                <li><strong>Region:</strong> Geographic region where the customer lives</li>
+                                <li><strong>Marital Status:</strong> Customer's marital status</li>
+                                <li><strong>Employment Status:</strong> Customer's employment status</li>
+                                <li><strong>Income Level:</strong> Income level category</li>
+                                <li><strong>Income (Lakhs):</strong> Annual income in lakhs</li>
+                                <li><strong>Medical History:</strong> Any pre-existing medical conditions</li>
+                                <li><strong>Insurance Plan:</strong> Type of insurance plan</li>
+                            </ul>
+                            
+                            <h5>Step 2: Submit the Form</h5>
+                            <p>Click the "Predict Premium" button to calculate the estimated premium.</p>
+                            
+                            <div class="alert alert-info">
+                                <strong>Tip:</strong> Make sure all fields are filled out correctly to get an accurate prediction.
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <section id="understanding-results">
+                            <h2 class="card-title">Understanding the Results</h2>
+                            <hr>
+                            <p>After submitting the form, you'll see the prediction results page with the following information:</p>
+                            
+                            <h5>Premium Estimate</h5>
+                            <p>The main result is the estimated premium amount, displayed prominently at the top of the results page.</p>
+                            
+                            <h5>Confidence Interval</h5>
+                            <p>The confidence interval shows the range within which the actual premium is likely to fall. This accounts for model uncertainty.</p>
+                            
+                            <h5>Customer Information</h5>
+                            <p>A summary of the information you entered is displayed for verification.</p>
+                            
+                            <h5>Key Factors</h5>
+                            <p>The most important factors influencing the premium calculation are highlighted, showing which inputs had the greatest impact on the prediction.</p>
+                            
+                            <div class="alert alert-info">
+                                <strong>Note:</strong> The prediction is an estimate based on the model's training data and may not reflect the exact premium that would be offered by an insurance company.
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <section id="model-monitoring">
+                            <h2 class="card-title">Model Monitoring Dashboard</h2>
+                            <hr>
+                            <p>The Model Monitoring Dashboard provides insights into the model's performance and data drift. Here's how to use it:</p>
+                            
+                            <h5>Performance Metrics</h5>
+                            <p>The dashboard displays key performance metrics:</p>
+                            <ul>
+                                <li><strong>R² Score:</strong> Measures how well the model explains the variance in the data. Higher is better, with a threshold of 0.9.</li>
+                                <li><strong>Mean Absolute Error (MAE):</strong> Average prediction error in dollar terms. Lower is better, with a threshold of $200.</li>
+                            </ul>
+                            
+                            <h5>Data Drift Analysis</h5>
+                            <p>The data drift section shows whether the distribution of input features has changed significantly since the model was trained:</p>
+                            <ul>
+                                <li><strong>p-value:</strong> Statistical significance of the drift test. Values below 0.05 indicate significant drift.</li>
+                                <li><strong>Test Statistic:</strong> The value of the test statistic used to detect drift.</li>
+                                <li><strong>Status:</strong> Whether drift has been detected for each feature.</li>
+                            </ul>
+                            
+                            <h5>Interpreting the Results</h5>
+                            <p>The dashboard provides recommendations based on the monitoring results:</p>
+                            <ul>
+                                <li><strong>Green indicators:</strong> Model is performing well, no action needed.</li>
+                                <li><strong>Yellow/Orange indicators:</strong> Some issues detected, consider scheduling model retraining.</li>
+                                <li><strong>Red indicators:</strong> Significant issues detected, immediate retraining recommended.</li>
+                            </ul>
+                        </section>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <section id="model-retraining">
+                            <h2 class="card-title">Model Retraining Process</h2>
+                            <hr>
+                            <p>The model retraining feature allows you to trigger a retraining of the prediction model when necessary.</p>
+                            
+                            <h5>When to Retrain</h5>
+                            <p>Consider retraining the model in the following situations:</p>
+                            <ul>
+                                <li>When significant data drift is detected in key features</li>
+                                <li>When model performance metrics fall below acceptable thresholds</li>
+                                <li>When new data becomes available that could improve model accuracy</li>
+                                <li>As part of regular maintenance (e.g., quarterly updates)</li>
+                            </ul>
+                            
+                            <h5>How to Trigger Retraining</h5>
+                            <p>To trigger model retraining:</p>
+                            <ol>
+                                <li>Go to the Model Monitoring Dashboard</li>
+                                <li>Scroll down to the "Trigger Model Retraining" section</li>
+                                <li>Select a reason for retraining</li>
+                                <li>Enter your name and email for notification</li>
+                                <li>Click the "Trigger Model Retraining" button</li>
+                            </ol>
+                            
+                            <h5>Retraining Process</h5>
+                            <p>After triggering retraining:</p>
+                            <ol>
+                                <li>The system will initiate the retraining process in the background</li>
+                                <li>Retraining typically takes 3-4 hours to complete</li>
+                                <li>You'll receive an email notification when retraining is complete</li>
+                                <li>The retraining history will be updated with the new version</li>
+                            </ol>
+                            
+                            <div class="alert alert-warning">
+                                <strong>Important:</strong> The current model remains active during retraining. Once retraining is complete, the system will automatically switch to the new model if it performs better.
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center mt-4">
+            <div class="mb-2">
+                <strong>Developed by:</strong> Erick K. Yegon, PhD | <a href="mailto:keyegon@gmail.com">keyegon@gmail.com</a>
+            </div>
+            <p>© 2025 Insurance Premium Prediction Model</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

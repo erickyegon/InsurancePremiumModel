@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Monitoring - Insurance Premium Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header class="text-center my-4">
+            <h1>Insurance Premium Prediction</h1>
+            <p class="lead">Model Monitoring Dashboard</p>
+        </header>
+
+        <nav class="mb-4">
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/monitoring">Model Monitoring</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/instructions">Instructions</a>
+                </li>
+            </ul>
+        </nav>
+
+        {% if retraining_success %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>Success!</strong> {{ retraining_message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Model Performance Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 text-center">
+                                <div class="metric-card {% if latest_r2 < 0.9 %}bg-danger{% else %}bg-success{% endif %} text-white p-3 rounded">
+                                    <h3>R² Score</h3>
+                                    <h2>{{ "%.4f"|format(latest_r2) }}</h2>
+                                    <p>Threshold: 0.9000</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-center">
+                                <div class="metric-card {% if latest_mae > 200 %}bg-danger{% else %}bg-success{% endif %} text-white p-3 rounded">
+                                    <h3>MAE</h3>
+                                    <h2>${{ "%.2f"|format(latest_mae) }}</h2>
+                                    <p>Threshold: $200.00</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <h5>Drift Status:</h5>
+                            {% if drift_detected %}
+                            <div class="alert alert-danger">
+                                <strong>Data Drift Detected!</strong> The following features show significant drift:
+                                <ul>
+                                    {% for feature in features_with_drift %}
+                                    <li>{{ feature }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-success">
+                                <strong>No Data Drift Detected.</strong> All features are within acceptable thresholds.
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mt-4">
+                            <h5>Retraining Recommendation:</h5>
+                            {% if retraining_recommended %}
+                            <div class="alert alert-warning">
+                                <strong>Model Retraining Recommended</strong> due to performance degradation or data drift.
+                            </div>
+                            {% else %}
+                            <div class="alert alert-success">
+                                <strong>No Retraining Needed.</strong> Model is performing well.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Performance Over Time</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="performanceChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Data Drift Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Feature</th>
+                                        <th>p-value</th>
+                                        <th>Test Statistic</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in drift_data %}
+                                    <tr>
+                                        <td>{{ row.feature }}</td>
+                                        <td>{{ "%.4f"|format(row.p_value) }}</td>
+                                        <td>{{ "%.4f"|format(row.test_statistic) }}</td>
+                                        <td>
+                                            {% if row.drift_detected %}
+                                            <span class="badge bg-danger">Drift Detected</span>
+                                            {% else %}
+                                            <span class="badge bg-success">No Drift</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Model Retraining History</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Version</th>
+                                        <th>Trigger</th>
+                                        <th>Performance Improvement</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in retraining_history %}
+                                    <tr>
+                                        <td>{{ row.date }}</td>
+                                        <td>{{ row.version }}</td>
+                                        <td>{{ row.trigger }}</td>
+                                        <td>{{ row.performance_improvement }}</td>
+                                        <td>{{ row.notes }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Trigger Model Retraining</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="/trigger-retraining" method="post">
+                            <div class="mb-3">
+                                <label for="reason" class="form-label">Reason for Retraining</label>
+                                <select class="form-select" id="reason" name="reason" required>
+                                    <option value="">Select a reason</option>
+                                    <option value="Data Drift">Data Drift Detected</option>
+                                    <option value="Performance Degradation">Performance Degradation</option>
+                                    <option value="New Features">New Features Available</option>
+                                    <option value="Scheduled Maintenance">Scheduled Maintenance</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="requested_by" class="form-label">Requested By</label>
+                                        <input type="text" class="form-control" id="requested_by" name="requested_by" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email for Notification</label>
+                                        <input type="email" class="form-control" id="email" name="email" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Trigger Model Retraining</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center mt-4">
+            <div class="mb-2">
+                <strong>Developed by:</strong> Erick K. Yegon, PhD | <a href="mailto:keyegon@gmail.com">keyegon@gmail.com</a>
+            </div>
+            <p>© 2025 Insurance Premium Prediction Model</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Performance chart
+        const performanceData = {{ performance_data|tojson }};
+        const dates = performanceData.map(item => item.date);
+        const r2Values = performanceData.map(item => item.r2_score);
+        const maeValues = performanceData.map(item => item.mae);
+
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: 'R² Score',
+                        data: r2Values,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        yAxisID: 'y',
+                        tension: 0.1
+                    },
+                    {
+                        label: 'MAE',
+                        data: maeValues,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        yAxisID: 'y1',
+                        tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'R² Score'
+                        },
+                        min: 0.8,
+                        max: 1.0
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'MAE'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                },
+                plugins: {
+                    annotation: {
+                        annotations: {
+                            r2Threshold: {
+                                type: 'line',
+                                yMin: 0.9,
+                                yMax: 0.9,
+                                borderColor: 'rgba(255, 0, 0, 0.5)',
+                                borderWidth: 2,
+                                borderDash: [6, 6],
+                                label: {
+                                    content: 'R² Threshold',
+                                    enabled: true,
+                                    position: 'start'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
